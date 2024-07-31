@@ -1,6 +1,7 @@
+//go:build go1.5
 // +build go1.5
 
-package binary
+package gocodec
 
 import (
 	"bufio"
@@ -52,6 +53,30 @@ type bufioReader struct {
 	readPos int
 	remind  int
 	err     error
+}
+
+func (br *bufioReader) ReadLine() string {
+	bytes := br.ReadBytesTill('\n')
+	if bytes == nil {
+		return ""
+	}
+	return string(bytes)
+}
+
+func (br *bufioReader) ReadBytesTill(delim byte) (b []byte) {
+	var bytes []byte
+	for {
+		b, err := br.ReadByte()
+		if err != nil {
+			return nil
+		}
+		if b == delim {
+			break
+		}
+		bytes = append(bytes, b)
+	}
+
+	return bytes
 }
 
 func (br *bufioReader) readForward(n int) (b []byte) {

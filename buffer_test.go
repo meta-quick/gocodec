@@ -1,4 +1,4 @@
-package binary
+package gocodec
 
 import (
 	"github.com/meta-quick/gocodec/utest"

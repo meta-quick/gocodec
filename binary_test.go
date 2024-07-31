@@ -1,4 +1,4 @@
-package binary
+package gocodec
 
 import (
 	"encoding/binary"
