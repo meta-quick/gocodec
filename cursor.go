@@ -40,6 +40,54 @@ func (c *Cursor[T]) Position() int {
 	return c.offset
 }
 
+func (c *Cursor[T]) Grow(ts []T) {
+	c.buffer = append(c.buffer, ts...)
+}
+
+func (c *Cursor[T]) Undo(n int) {
+	if c.offset < n {
+		c.offset = 0
+	} else {
+		c.offset -= n
+	}
+}
+
+func (c *Cursor[T]) Rewind() {
+	c.offset = 0
+}
+
+func (c *Cursor[T]) Skip(n int) {
+	if c.offset+n > len(c.buffer) {
+		c.offset = len(c.buffer)
+	} else {
+		c.offset += n
+	}
+}
+
+func (c *Cursor[T]) SkipTo(delim T) {
+	for i, v := range c.buffer[c.offset:] {
+		if v == delim {
+			c.offset += i + 1
+			return
+		}
+	}
+}
+
+func (c *Cursor[T]) UnTakeN(n int) {
+	if n > len(c.buffer) {
+		c.offset = 0
+	} else {
+		c.offset -= n
+		if c.offset < 0 {
+			c.offset = 0
+		}
+	}
+}
+
+func (c *Cursor[T]) TakeN(n int) (value []T) {
+	return c.ReadN(n)
+}
+
 func (c *Cursor[T]) Read() (value T) {
 	if c.offset >= len(c.buffer) {
 		return
