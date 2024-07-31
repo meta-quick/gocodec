@@ -7,14 +7,16 @@ import (
 )
 
 type Cursor[T comparable] struct {
-	buffer []T
-	offset int
+	buffer      []T
+	offset      int
+	lastTakeLen int
 }
 
 func NewCursor[T comparable](ts []T) Cursor[T] {
 	return Cursor[T]{
-		buffer: ts,
-		offset: 0,
+		buffer:      ts,
+		offset:      0,
+		lastTakeLen: 0,
 	}
 }
 
@@ -30,6 +32,7 @@ func (c *Cursor[T]) Rest() ([]T, error) {
 	if c.EOF() {
 		return nil, errors.New("EOF")
 	}
+	c.lastTakeLen = len(c.buffer) - c.offset
 	return c.buffer[c.offset:], nil
 }
 
@@ -39,6 +42,39 @@ func (c *Cursor[T]) Len() int64 {
 
 func (c *Cursor[T]) Position() int {
 	return c.offset
+}
+
+func (c *Cursor[T]) Peek(n int) ([]T, error) {
+	if c.offset+n > len(c.buffer) {
+		return nil, errors.New("overflow")
+	}
+	if c.offset+n < 0 {
+		return nil, errors.New("negative position")
+	}
+	return c.buffer[c.offset : c.offset+n], nil
+}
+
+func (c *Cursor[T]) PeekOffset(offset, n int) ([]T, error) {
+	if offset+n > len(c.buffer) {
+		return nil, errors.New("overflow")
+	}
+	if offset+n < 0 {
+		return nil, errors.New("negative position")
+	}
+	return c.buffer[offset : offset+offset+n], nil
+}
+
+func (c *Cursor[T]) Advance(n int) (int, error) {
+	if c.offset+n > len(c.buffer) {
+		return 0, errors.New("overflow")
+	}
+
+	if c.offset+n < 0 {
+		return 0, errors.New("negative position")
+	}
+
+	c.offset += n
+	return c.offset, nil
 }
 
 func (c *Cursor[T]) Grow(ts []T) (n int, err error) {
@@ -60,17 +96,32 @@ func (c *Cursor[T]) Reset() {
 }
 
 func (c *Cursor[T]) Skip(n int) {
-	if c.offset+n > len(c.buffer) {
-		c.offset = len(c.buffer)
-	} else {
-		c.offset += n
+	if n < 0 {
+		return
 	}
+
+	if c.offset+n > len(c.buffer) {
+		return
+	}
+
+	c.offset += n
+	c.lastTakeLen = n
+}
+
+func (c *Cursor[T]) LastTake() (int, error) {
+	if c.lastTakeLen == 0 {
+		return 0, errors.New("no last take")
+	}
+	c.offset -= c.lastTakeLen
+	c.lastTakeLen = 0
+	return c.lastTakeLen, nil
 }
 
 func (c *Cursor[T]) SkipTo(delim T) error {
 	for i, v := range c.buffer[c.offset:] {
 		if v == delim {
 			c.offset += i + 1
+			c.lastTakeLen = i + 1
 			return nil
 		}
 	}
@@ -99,6 +150,7 @@ func (c *Cursor[T]) Read() (value T, err error) {
 	}
 	value = c.buffer[c.offset]
 	c.offset++
+	c.lastTakeLen = 1
 	err = nil
 	return
 }
@@ -114,6 +166,7 @@ func (c *Cursor[T]) ReadN(n int) (value []T, err error) {
 
 	value = c.buffer[c.offset : c.offset+n]
 	c.offset += n
+	c.lastTakeLen = n
 	err = nil
 	return
 }
@@ -138,6 +191,7 @@ func (c *Cursor[T]) Till(delim T) (value []T, err error) {
 			n := i + 1
 			value = c.buffer[c.offset : c.offset+n]
 			c.offset += n
+			c.lastTakeLen = n
 			err = nil
 			return
 		}
