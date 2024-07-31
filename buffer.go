@@ -18,6 +18,10 @@ func (buf *Buffer) Len() int64 {
 	return buf.cursor.Len()
 }
 
+func (buf *Buffer) UnTake(n int) {
+	buf.cursor.UnTakeN(n)
+}
+
 func (buf *Buffer) ReadUint8() (v uint8, err error) {
 	v, err = buf.cursor.Read()
 	return
