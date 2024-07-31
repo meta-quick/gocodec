@@ -10,6 +10,10 @@ type Buffer struct {
 	WritePos int
 }
 
+func (buf *Buffer) Len() int64 {
+	return int64(buf.WritePos - buf.ReadPos)
+}
+
 func (buf *Buffer) WriteLine(lines string) {
 	buf.WriteString(lines + "\n")
 }
@@ -32,6 +36,7 @@ func (buf *Buffer) ReadBytesTill(delim byte) (b []byte) {
 		if b == delim {
 			break
 		}
+		buf.ReadPos += 1
 		bytes = append(bytes, b)
 	}
 

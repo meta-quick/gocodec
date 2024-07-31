@@ -12,6 +12,11 @@ type Reader struct {
 	err error
 }
 
+func (reader *Reader) Len() int64 {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewReader(r io.Reader) *Reader {
 	return &Reader{R: r}
 }

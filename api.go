@@ -13,6 +13,7 @@ type BinaryReader interface {
 	io.Reader
 	io.ByteReader
 
+	Len() int64
 	ReadBytes(n int) []byte
 	ReadString(n int) string
 	ReadLine() string

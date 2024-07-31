@@ -55,6 +55,11 @@ type bufioReader struct {
 	err     error
 }
 
+func (br *bufioReader) Len() int64 {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (br *bufioReader) ReadLine() string {
 	bytes := br.ReadBytesTill('\n')
 	if bytes == nil {
