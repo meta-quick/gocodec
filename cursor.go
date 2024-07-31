@@ -1,6 +1,7 @@
 package gocodec
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 )
@@ -25,23 +26,24 @@ func (c *Cursor[T]) EOF() bool {
 	return c.offset >= len(c.buffer)
 }
 
-func (c *Cursor[T]) Rest() []T {
+func (c *Cursor[T]) Rest() ([]T, error) {
 	if c.EOF() {
-		return nil
+		return nil, errors.New("EOF")
 	}
-	return c.buffer[c.offset:]
+	return c.buffer[c.offset:], nil
 }
 
-func (c *Cursor[T]) Len() int {
-	return len(c.buffer) - c.offset
+func (c *Cursor[T]) Len() int64 {
+	return int64(len(c.buffer) - c.offset)
 }
 
 func (c *Cursor[T]) Position() int {
 	return c.offset
 }
 
-func (c *Cursor[T]) Grow(ts []T) {
+func (c *Cursor[T]) Grow(ts []T) (n int, err error) {
 	c.buffer = append(c.buffer, ts...)
+	return len(ts), nil
 }
 
 func (c *Cursor[T]) Undo(n int) {
@@ -64,13 +66,14 @@ func (c *Cursor[T]) Skip(n int) {
 	}
 }
 
-func (c *Cursor[T]) SkipTo(delim T) {
+func (c *Cursor[T]) SkipTo(delim T) error {
 	for i, v := range c.buffer[c.offset:] {
 		if v == delim {
 			c.offset += i + 1
-			return
+			return nil
 		}
 	}
+	return errors.New("no such element")
 }
 
 func (c *Cursor[T]) UnTakeN(n int) {
@@ -84,30 +87,33 @@ func (c *Cursor[T]) UnTakeN(n int) {
 	}
 }
 
-func (c *Cursor[T]) TakeN(n int) (value []T) {
+func (c *Cursor[T]) TakeN(n int) (value []T, err error) {
 	return c.ReadN(n)
 }
 
-func (c *Cursor[T]) Read() (value T) {
+func (c *Cursor[T]) Read() (value T, err error) {
 	if c.offset >= len(c.buffer) {
+		err = errors.New("overflow")
 		return
 	}
 	value = c.buffer[c.offset]
 	c.offset++
+	err = nil
 	return
 }
 
-func (c *Cursor[T]) ReadN(n int) (value []T) {
+func (c *Cursor[T]) ReadN(n int) (value []T, err error) {
 	if c.offset >= len(c.buffer) {
-		return
+		return nil, errors.New("overflow")
 	}
 
 	if c.offset+n > len(c.buffer) {
-		n = len(c.buffer) - c.offset
+		return nil, errors.New("no enough elements")
 	}
 
 	value = c.buffer[c.offset : c.offset+n]
 	c.offset += n
+	err = nil
 	return
 }
 
@@ -121,38 +127,37 @@ func (c Cursor[T]) Next() Cursor[T] {
 	}
 }
 
-func (c *Cursor[T]) Till(delim T) (value []T, n int) {
+func (c *Cursor[T]) Till(delim T) (value []T, err error) {
 	if c.EOF() {
-		return nil, 0
+		return nil, errors.New("EOF")
 	}
 
 	for i, v := range c.buffer[c.offset:] {
 		if v == delim {
-			n = i + 1
+			n := i + 1
 			value = c.buffer[c.offset : c.offset+n]
 			c.offset += n
+			err = nil
 			return
 		}
 	}
-	value = c.buffer[c.offset:]
-	n = len(value)
-	c.offset += n
+	err = errors.New("no such element")
 	return
 }
 
-func (c Cursor[T]) NextN(n int) Cursor[T] {
+func (c Cursor[T]) NextN(n int) (Cursor[T], error) {
 	if c.EOF() {
-		return c
+		return c, errors.New("EOF")
 	}
 
 	if c.offset+n > len(c.buffer) {
-		n = len(c.buffer) - c.offset
+		return c, errors.New("no enough elements")
 	}
 
 	return Cursor[T]{
 		buffer: c.buffer,
 		offset: c.offset + n,
-	}
+	}, nil
 }
 
 func (c *Cursor[T]) ToEOF() Cursor[T] {

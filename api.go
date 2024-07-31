@@ -3,9 +3,7 @@ package gocodec
 import "io"
 
 var _ BinaryReader = (*Buffer)(nil)
-var _ BinaryReader = (*Reader)(nil)
 var _ BinaryWriter = (*Buffer)(nil)
-var _ BinaryWriter = (*Writer)(nil)
 
 type BinaryReader interface {
 	Error() error
