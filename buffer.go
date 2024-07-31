@@ -18,6 +18,10 @@ func (buf *Buffer) Len() int64 {
 	return buf.cursor.Len()
 }
 
+func (buf *Buffer) Reset() {
+	buf.cursor.Reset()
+}
+
 func (buf *Buffer) UnTake(n int) {
 	buf.cursor.UnTakeN(n)
 }

@@ -54,8 +54,9 @@ func (c *Cursor[T]) Undo(n int) {
 	}
 }
 
-func (c *Cursor[T]) Rewind() {
+func (c *Cursor[T]) Reset() {
 	c.offset = 0
+	c.buffer = c.buffer[:0]
 }
 
 func (c *Cursor[T]) Skip(n int) {
