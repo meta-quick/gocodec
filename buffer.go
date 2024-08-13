@@ -47,10 +47,10 @@ func (buf *Buffer) Read(b []byte) (int, error) {
 func (buf *Buffer) ReadLess(b []byte) (int, error) {
 	byteLen := (int)(buf.cursor.Len())
 	buffLen := len(b)
-	if byteLen < buffLen {
-		byteLen = buffLen
+	if buffLen > byteLen {
+		buffLen = byteLen
 	}
-	data, err := buf.cursor.TakeN(byteLen)
+	data, err := buf.cursor.TakeN(buffLen)
 	if err != nil {
 		return 0, err
 	}
