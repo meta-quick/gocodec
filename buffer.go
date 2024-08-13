@@ -44,6 +44,20 @@ func (buf *Buffer) Read(b []byte) (int, error) {
 	return n, nil
 }
 
+func (buf *Buffer) ReadLess(b []byte) (int, error) {
+	byteLen := (int)(buf.cursor.Len())
+	buffLen := len(b)
+	if byteLen < buffLen {
+		byteLen = buffLen
+	}
+	data, err := buf.cursor.TakeN(byteLen)
+	if err != nil {
+		return 0, err
+	}
+	n := copy(b, data)
+	return n, nil
+}
+
 func (buf *Buffer) ReadBytes(n int) ([]byte, error) {
 	b := make([]byte, n)
 	n, err := buf.Read(b)
